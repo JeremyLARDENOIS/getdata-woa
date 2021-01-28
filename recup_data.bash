@@ -86,6 +86,12 @@ get_data (){
             echo create data/$pokeId - $(head -n $pokeId data.txt | tail -n 1 | cut -d' ' -f2)
             head -n $pokeId data.txt |tail -n  1 > data/$pokeId
 
+            # Correct a bug of end of file of data.txt
+            if [ $pokeId -eq 898 ]
+            then
+                echo '' >> data/898
+            fi
+
             # If there is only one forme :
             if [ $(cat html-base/$pokeId | grep '<select id="formes" name="formes" >' | wc -l) -eq 0 ]
             then
@@ -107,7 +113,6 @@ get_data (){
                         ((i=i+2))
                         line=$(head -n $i html-base/$pokeId | tail -n 1)
                         echo $line >> data/$pokeId
-                        break
                     fi
                 done
 
@@ -194,4 +199,5 @@ fi
 
 get_data
 
-
+echo 'node send_datas.js'
+node send_datas.js
