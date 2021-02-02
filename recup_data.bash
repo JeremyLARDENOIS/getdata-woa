@@ -177,6 +177,20 @@ get_data (){
     done
 }
 
+get_img(){
+    for pokeId in $(seq 1 $(ls -w 1 html-base | wc -l))
+    do
+        for url in $(cat data/$pokeId | grep '.*\.png')
+        do
+            echo img/$(basename $url)
+            if [ ! -f img/$(basename $url) ]
+            then
+                wget $url -O img/$(basename $url) -nv
+            fi
+        done
+    done
+}
+
 ### MAIN ###
 
 if [ -d html-base ]
@@ -187,7 +201,6 @@ else
     mkdir html-base
     get_html
 fi
-
 get_html
 
 if [ -d data ]
@@ -198,6 +211,14 @@ else
 fi
 
 get_data
+
+if [ -d img ]
+then
+    echo img exists
+else
+    mkdir img
+fi
+get_img
 
 echo 'node send_datas.js'
 node send_datas.js
