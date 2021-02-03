@@ -1,6 +1,8 @@
 #!/bin/bash
 
 get_html() {
+    # Return : 0 if ok, else if other
+    # Detail : Download html website in html-base and fill data.txt
 
     id=1 # pokemon identiant of national pokedex
     gen=1 # number of the genertaion of the pokemon 
@@ -86,14 +88,14 @@ get_data (){
             echo create data/$pokeId - $(head -n $pokeId data.txt | tail -n 1 | cut -d' ' -f2)
             head -n $pokeId data.txt |tail -n  1 > data/$pokeId
 
-            # Correct a bug of end of file of data.txt
+            # Correct a bug of end of file of data.txt ; HotFix
             if [ $pokeId -eq 898 ]
             then
                 echo '' >> data/898
             fi
 
             # If there is only one forme :
-            if [ $(cat html-base/$pokeId | grep '<select id="formes" name="formes" >' | wc -l) -eq 0 ]
+            if [ $(cat html-base/$pokeId | grep '<select id="formes" name="formes"' | wc -l) -eq 0 ]
             then
                 nbline=$(wc -l html-base/$pokeId | cut -d ' ' -f 1)
 
@@ -141,7 +143,7 @@ get_data (){
                 do
                     # Fight Stats 
                     # hp | attack | defense | special attack | special defense | speed
-                    echo $(cat html-base/3 | grep 'data-value' | sed -E 's/.*([[:digit:]]).*/\1/' | head -n $((5*num_form)) | tail -n 5) >> data/$pokeId
+                    echo $(cat html-base/$pokeId | grep 'data-value' | sed -E 's/.*([[:digit:]]).*/\1/' | head -n $((5*num_form)) | tail -n 5) >> data/$pokeId
 
                     # Image
                     cat html-base/$pokeId | grep -E "(img).*https://assets.pokemon.com/assets/cms2/img/pokedex/full.*png" | sed -E 's/^.*src="([^"]+).*/\1/g' | head -n $num_form | tail -n 1 >> data/$pokeId
@@ -151,13 +153,10 @@ get_data (){
                         ## Weight
                         ## Category
                         ## Abilities
-                    cat html-base/3 | grep -E '<span class="attribute-value">.*<' | sed -E 's/ *<span class="attribute-value">([^<]+)<\/span>/\1/'| head -n $((4*num_form)) | tail -n 4 >> data/$pokeId
+                    cat html-base/$pokeId | grep -E '<span class="attribute-value">.*<' | sed -E 's/ *<span class="attribute-value">([^<]+)<\/span>/\1/'| head -n $((4*num_form)) | tail -n 4 >> data/$pokeId
 
                 done
                 
-                # Types
-                get_type $pokeId >> data/$pokeId
-
                 # Description
                 for i in $(seq 1 $nbline)
                 do
@@ -168,7 +167,11 @@ get_data (){
                         line=$(head -n $i html-base/$pokeId | tail -n 1)
                         echo $line >> data/$pokeId
                     fi
-                done
+                    done
+                
+                # Types
+                get_type $pokeId >> data/$pokeId
+
             fi
             # Evolution 
             # If there isn't evolution, we put the pokemon's name
@@ -178,7 +181,6 @@ get_data (){
             else
                 cat html-base/$pokeId | grep -E '<a href="/us/pokedex/[[:alpha:]]*">' | sed -E 's/<a href="\/us\/pokedex\/([[:alpha:]]*)">$/\1/g' >> data/$pokeId
             fi
-            
         fi
     done
 }
@@ -188,9 +190,9 @@ get_img(){
     do
         for url in $(cat data/$pokeId | grep '.*\.png')
         do
-            echo img/$(basename $url)
             if [ ! -f img/$(basename $url) ]
             then
+                echo create img/$(basename $url)
                 wget $url -O img/$(basename $url) -nv
             fi
         done
