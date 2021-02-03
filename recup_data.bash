@@ -171,8 +171,14 @@ get_data (){
                 done
             fi
             # Evolution 
-
-            cat html-base/$pokeId | grep -E '<a href="/us/pokedex/[[:alpha:]]*">' | sed -E 's/<a href="\/us\/pokedex\/([[:alpha:]]*)">$/\1/g' >> data/$pokeId
+            # If there isn't evolution, we put the pokemon's name
+            if [ -z "$(cat html-base/$pokeId | grep -E '<a href="/us/pokedex/[[:alpha:]]*">' | sed -E 's/<a href="\/us\/pokedex\/([[:alpha:]]*)">$/\1/g')" ]
+            then
+                head -n $pokeId data.txt | tail -n 1 | cut -d' ' -f2 >> data/$pokeId
+            else
+                cat html-base/$pokeId | grep -E '<a href="/us/pokedex/[[:alpha:]]*">' | sed -E 's/<a href="\/us\/pokedex\/([[:alpha:]]*)">$/\1/g' >> data/$pokeId
+            fi
+            
         fi
     done
 }
@@ -220,5 +226,5 @@ else
 fi
 get_img
 
-echo 'python3 send-datas.js'
-python3 send-datas.js
+echo 'python3 send-datas.py'
+python3 send-data.py
