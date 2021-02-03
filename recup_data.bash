@@ -220,5 +220,5 @@ else
 fi
 get_img
 
-echo 'node send_datas.js'
-node send_datas.js
+echo 'python3 send-datas.js'
+python3 send-datas.js
