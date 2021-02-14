@@ -106,18 +106,6 @@ get_data (){
                 # Image 
                 cat html-base/$pokeId | grep -E "(img).*https://assets.pokemon.com/assets/cms2/img/pokedex/full.*png" | cut -d'"' -f 4 >> data/$pokeId
 
-                # Description
-                for i in $(seq 1 $nbline)
-                do
-                    line=$(head -n $i html-base/$pokeId | tail -n 1)
-                    if [[ ! -z $(echo $line | grep '<p class="version-[yx]') ]]
-                    then
-                        ((i=i+2))
-                        line=$(head -n $i html-base/$pokeId | tail -n 1)
-                        echo $line >> data/$pokeId
-                    fi
-                done
-
                 # Carecteristics
                     ## Height
                     ## Weight
@@ -130,6 +118,17 @@ get_data (){
 
                 echo $(cat html-base/$pokeId | grep '<a href="/us/pokedex/?type=.*">.*</a>' | sed -E 's/^[^<]*<a href="\/us\/pokedex\/\?type=[[:alpha:]]+">([^<]+)<\/a>/\1/g') >> data/$pokeId
             
+                # Description
+                for i in $(seq 1 $nbline)
+                do
+                    line=$(head -n $i html-base/$pokeId | tail -n 1)
+                    if [[ ! -z $(echo $line | grep '<p class="version-[yx]') ]]
+                    then
+                        ((i=i+2))
+                        line=$(head -n $i html-base/$pokeId | tail -n 1)
+                        echo $line >> data/$pokeId
+                    fi
+                done
              else
                 # Pokemons Specials - Multi-forms             
                 nb_forms=$(cat html-base/$pokeId | grep -E "(img).*https://assets.pokemon.com/assets/cms2/img/pokedex/full.*png" | wc -l)
@@ -139,6 +138,7 @@ get_data (){
                 # Names
                 cat html-base/$pokeId | grep '<img src="https://assets.pokemon.com/assets/cms2/img/pokedex/full/' | sed -E 's/^.*alt="([^"]+).*$/\1/g' >> data/$pokeId
 
+                decalage=0 # Hot fix
                 for num_form in $(seq 1 $nb_forms)
                 do
                     # Fight Stats 
@@ -149,12 +149,35 @@ get_data (){
                     cat html-base/$pokeId | grep -E "(img).*https://assets.pokemon.com/assets/cms2/img/pokedex/full.*png" | sed -E 's/^.*src="([^"]+).*/\1/g' | head -n $num_form | tail -n 1 >> data/$pokeId
 
                     # Carecteristics
-                        ## Height
-                        ## Weight
-                        ## Category
-                        ## Abilities
-                    cat html-base/$pokeId | grep -E '<span class="attribute-value">.*<' | sed -E 's/ *<span class="attribute-value">([^<]+)<\/span>/\1/'| head -n $((4*num_form)) | tail -n 4 >> data/$pokeId
-
+                    ## Height
+                    ## Weight
+                    ## Category
+                    cat html-base/$pokeId | grep -E '<span class="attribute-value">.*<' | sed -E 's/ *<span class="attribute-value">([^<]+)<\/span>/\1/'| head -n $((4*num_form+decalage)) | tail -n 4 | head -n 3 >> data/$pokeId
+                    ## Abilities
+                    nblines=$(cat html-base/$pokeId | wc -l)
+                    i_form=1 # count form in loop
+                    for i in $(seq 1 $nblines)
+                    do
+                        line=$(head -n $i html-base/$pokeId | tail -n 1)
+                        if [ ! -z "$(echo $line | grep '<span class="attribute-title">Abilities</span>'  )" ]
+                        then
+                            if [ $i_form -eq $num_form ]
+                            then
+                                while [ -z "$(echo $line | grep '</ul>'  )" ]
+                                do
+                                    if [ ! -z "$(echo $line | grep '<span class="attribute-value">')" ] 
+                                    then
+                                        echo $line | sed -E "s/^<span.*>(.*)<\/span>$/\1/g" >> data/$pokeId
+                                        ((decalage=decalage+1))
+                                    fi
+                                    ((i=i+1))
+                                    line=$(head -n $i html-base/$pokeId | tail -n 1)
+                                done
+                                ((decalage=decalage-1))
+                            fi
+                            ((i_form=i_form+1))
+                        fi
+                    done
                 done
                 
                 # Description
@@ -179,7 +202,7 @@ get_data (){
             then
                 head -n $pokeId data.txt | tail -n 1 | cut -d' ' -f2 >> data/$pokeId
             else
-                cat html-base/$pokeId | grep -E '<a href="/us/pokedex/[[:alpha:]]*">' | sed -E 's/<a href="\/us\/pokedex\/([[:alpha:]]*)">$/\1/g' >> data/$pokeId
+                cat html-base/$pokeId | grep -E '<a href="/us/pokedex/[[:alpha:]][^"]*">' | sed -E 's/<a href="\/us\/pokedex\/([[:alpha:]][^"]*)">$/\1/g' >> data/$pokeId
             fi
         fi
     done
@@ -228,5 +251,5 @@ else
 fi
 get_img
 
-echo 'python3 send-datas.py'
-python3 send-data.py
+# echo 'python3 send-datas.py'
+# python3 send-data.py
